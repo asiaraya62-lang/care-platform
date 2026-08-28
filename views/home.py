@@ -6,7 +6,7 @@ from services.catalog import CATEGORIES
 from services.store import current_user, load_programs, search_products
 from ui.components import category_panel, esc, qs
 from ui.layout import boot, end_shell, render_html, start_shell
-from ui.media import show_banner, show_product_grid
+from ui.media import show_banner, show_product_grid, show_program_grid
 
 
 def page() -> None:
@@ -33,11 +33,8 @@ def _search_home(q: str) -> None:
     )
     st.subheader("상품·서비스")
     show_product_grid(rows, key_prefix="search")
-    render_html(
-        '<div class="section"><div class="section-head"><h2>정부·지자체 지원사업</h2></div>'
-        + _program_cards(hits)
-        + "</div>"
-    )
+    st.markdown("### 정부·지자체 지원사업")
+    show_program_grid(hits)
     end_shell()
 
 
@@ -131,26 +128,10 @@ def _portal_home() -> None:
         rows = search_products(category=cat["code"]).head(5).to_dict("records")
         st.markdown(f"### {cat['name']}")
         show_product_grid(rows, key_prefix=cat["code"])
-    render_html(
-        '<div class="section"><div class="section-head"><h2>정부·지자체 지원사업 후보</h2><a href="/support">전체 보기</a></div>'
-        + _program_cards(programs)
-        + "</div>"
-    )
+    head, more = st.columns([5, 1], vertical_alignment="bottom")
+    with head:
+        st.markdown("### 정부·지자체 지원사업 후보")
+    with more:
+        st.markdown('<a href="/support">전체 보기</a>', unsafe_allow_html=True)
+    show_program_grid(programs)
     end_shell()
-
-
-def _program_cards(rows: list[dict]) -> str:
-    if not rows:
-        return '<div class="empty">등록된 지원사업이 없습니다.</div>'
-    cards = []
-    for row in rows:
-        cards.append(
-            f"""
-            <a class="program" href="{esc(qs("/support", pid=row["program_id"]))}">
-              <b>{esc(row["name"])}</b>
-              <p>{esc(row["benefit"])} · 대상 {esc(row["region"])} · {esc(row["care_rule"])}</p>
-              <div class="src">출처 {esc(row["source_url"])} · 확인일 {esc(row["verified_on"])}</div>
-            </a>
-            """
-        )
-    return f'<div class="program-list">{"".join(cards)}</div>'
