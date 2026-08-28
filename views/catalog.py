@@ -4,8 +4,9 @@ import streamlit as st
 
 from services.catalog import CATEGORIES, category_by_code
 from services.store import search_products
-from ui.components import esc, product_grid, qs
-from ui.layout import boot, chrome
+from ui.components import esc, qs
+from ui.layout import boot, end_shell, render_html, start_shell
+from ui.media import show_product_grid
 
 
 def page() -> None:
@@ -58,18 +59,17 @@ def page() -> None:
             )
         sub_links = f'<div class="sub-links" style="margin-top:8px">{"".join(bits)}</div>'
 
-    body = f"""
-    <div class="page-title">{esc(title)} <span style="font-size:14px;color:#868e96;font-weight:400">{len(rows)}개</span></div>
-    <div class="filter-bar">
-      {" · ".join(cat_links)}
-    </div>
-    <div class="filter-bar">
-      {" · ".join(sort_links)}
-      · <a class="{gov_cls}" href="{esc(gov_link)}">정부지원 가능만</a>
-      {sub_links}
-    </div>
-    <div class="section">
-      {product_grid(rows) if rows else '<div class="empty">조건에 맞는 상품이 없습니다.</div>'}
-    </div>
-    """
-    chrome("catalog", body, search_action="/catalog", q=q)
+    start_shell("catalog", q=q)
+    render_html(
+        f"""
+        <div class="page-title">{esc(title)} <span style="font-size:14px;color:#868e96;font-weight:400">{len(rows)}개</span></div>
+        <div class="filter-bar">{" · ".join(cat_links)}</div>
+        <div class="filter-bar">
+          {" · ".join(sort_links)}
+          · <a class="{gov_cls}" href="{esc(gov_link)}">정부지원 가능만</a>
+          {sub_links}
+        </div>
+        """
+    )
+    show_product_grid(rows, key_prefix="cat")
+    end_shell()

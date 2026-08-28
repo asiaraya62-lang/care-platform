@@ -18,9 +18,19 @@ def render_html(*parts: str) -> None:
 
 def chrome(active: str, body: str, search_action: str = "/", q: str = "") -> None:
     _ = search_action
+    start_shell(active, q=q)
+    render_html(body)
+    end_shell()
+
+
+def start_shell(active: str, q: str = "") -> None:
     render_html(header_html(active, q=q))
     _native_search(q)
-    render_html(nav_html(active), body, footer_html())
+    render_html(nav_html(active))
+
+
+def end_shell() -> None:
+    render_html(footer_html())
 
 
 def _native_search(q: str) -> None:

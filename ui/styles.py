@@ -172,10 +172,12 @@ a { color: inherit; }
 }
 .card:hover { border-color: var(--blue); }
 .thumb {
-  height: 132px; display: grid; place-items: center; color: #fff; font-weight: 700;
-  font-size: 14px; letter-spacing: -0.03em; position: relative;
+  height: 148px; background: #e9ecef; position: relative; overflow: hidden;
 }
-.badges { position: absolute; left: 8px; top: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+.thumb img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.badges { position: absolute; left: 8px; top: 8px; display: flex; gap: 4px; flex-wrap: wrap; z-index: 1; }
 .badge {
   font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 2px; color: #fff;
 }
@@ -224,7 +226,10 @@ a { color: inherit; }
   padding: 24px;
 }
 .product-hero .big {
-  height: 280px; display: grid; place-items: center; color: #fff; font-size: 22px; font-weight: 700;
+  height: 280px; overflow: hidden; background: #e9ecef; border-radius: 4px;
+}
+.product-hero .big img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
 }
 .notice {
   background: #fff9db; border: 1px solid #ffe066; padding: 10px 12px; font-size: 13px;

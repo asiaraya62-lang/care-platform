@@ -46,8 +46,11 @@ def thumb_style(row: dict[str, Any]) -> str:
     return f"background:{color};"
 
 
+def product_img_src(row: dict[str, Any]) -> str:
+    return ""
+
+
 def product_card(row: dict[str, Any], show_compare: bool = True) -> str:
-    pid = esc(row["id"])
     name = esc(row["name"])
     brand = esc(row.get("brand") or "")
     price = format_price(int(row.get("price") or 0))
@@ -57,12 +60,17 @@ def product_card(row: dict[str, Any], show_compare: bool = True) -> str:
     compare_btn = (
         f'<a href="{esc(compare_link)}">비교</a>' if show_compare else ""
     )
+    img = product_img_src(row)
+    if img:
+        photo = f'<img src="{esc(img)}" alt="{name}" />'
+    else:
+        photo = f'<div class="thumb-fallback" style="{thumb_style(row)}">{esc(row.get("subcategory") or "")}</div>'
     return f"""
     <div class="card">
       <a href="{esc(qs('/product', id=row['id']))}">
-        <div class="thumb" style="{thumb_style(row)}">
+        <div class="thumb">
+          {photo}
           <div class="badges">{badge_html(row)}</div>
-          {esc(row.get("subcategory") or "")}
         </div>
       </a>
       <div class="card-body">

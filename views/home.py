@@ -4,8 +4,9 @@ import streamlit as st
 
 from services.catalog import CATEGORIES
 from services.store import current_user, load_programs, search_products
-from ui.components import category_panel, esc, product_grid, qs
-from ui.layout import boot, chrome
+from ui.components import category_panel, esc, qs
+from ui.layout import boot, end_shell, render_html, start_shell
+from ui.media import show_banner, show_product_grid
 
 
 def page() -> None:
@@ -26,18 +27,18 @@ def _search_home(q: str) -> None:
         + programs["agency"].fillna("")
     )
     hits = programs[blob.str.contains(q, regex=False)].to_dict("records")
-    body = f"""
-    <div class="page-title">‘{esc(q)}’ 검색 결과 · 상품 {len(rows)}건 · 지원사업 {len(hits)}건</div>
-    <div class="section">
-      <div class="section-head"><h2>상품·서비스</h2><a href="/catalog">자세히 보기</a></div>
-      {product_grid(rows) if rows else '<div class="empty">일치하는 상품이 없습니다. 보행기, 욕실, 단말기처럼 다른 단어로 찾아 보세요.</div>'}
-    </div>
-    <div class="section">
-      <div class="section-head"><h2>정부·지자체 지원사업</h2><a href="/support">전체 보기</a></div>
-      {_program_cards(hits) if hits else '<div class="empty">검색어에 맞는 지원사업이 없습니다. 출처와 기준일은 각 사업 상세에서 확인합니다.</div>'}
-    </div>
-    """
-    chrome("home", body, search_action="/", q=q)
+    start_shell("home", q=q)
+    render_html(
+        f'<div class="page-title">‘{esc(q)}’ 검색 결과 · 상품 {len(rows)}건 · 지원사업 {len(hits)}건</div>'
+    )
+    st.subheader("상품·서비스")
+    show_product_grid(rows, key_prefix="search")
+    render_html(
+        '<div class="section"><div class="section-head"><h2>정부·지자체 지원사업</h2></div>'
+        + _program_cards(hits)
+        + "</div>"
+    )
+    end_shell()
 
 
 def _portal_home() -> None:
@@ -75,83 +76,67 @@ def _portal_home() -> None:
     cheap = cheap[cheap["price"] > 0].head(10).to_dict("records")
     programs = load_programs().head(6).to_dict("records")
 
-    sections = []
-    for cat in CATEGORIES:
-        rows = search_products(category=cat["code"]).head(5).to_dict("records")
-        subs = "".join(
-            f'<a href="{esc(qs("/catalog", cat=cat["code"], sub=s))}">{esc(s)}</a>'
-            for s in cat["subs"][:5]
+    start_shell("home")
+    left, center, right = st.columns([1.15, 2.4, 1.15])
+    with left:
+        render_html(category_panel())
+    with center:
+        show_banner(
+            "consult",
+            "/consult",
+            "퇴원 후 돌봄, 한곳에서 연결",
+            "불편사항을 입력하면 상품·지원·지역업체를 함께 안내합니다.",
         )
-        sections.append(
-            f"""
-            <div class="section">
-              <div class="section-head">
-                <h2>{esc(cat["name"])}</h2>
-                <div class="sub-links">{subs}</div>
-                <a href="{esc(qs("/catalog", cat=cat["code"]))}">{esc(cat["short"])} 더보기</a>
-              </div>
-              {product_grid(rows)}
+        g1, g2 = st.columns(2)
+        with g1:
+            show_banner(
+                "gov",
+                "/support",
+                "정부·지자체 지원",
+                "성남시 시범 데이터 · 출처와 기준일 표시",
+            )
+        with g2:
+            show_banner(
+                "compare",
+                "/catalog",
+                "가격·후기·지역 비교",
+                "광고 상품은 따로 표시합니다",
+            )
+        show_banner(
+            "emergency",
+            qs("/catalog", cat="emergency"),
+            "긴급 안전단말기",
+            "PoC는 모의 경보 · 112 자동연결 없음",
+        )
+    with right:
+        render_html(
+            side_login
+            + """
+            <div class="panel side-box" style="margin-top:12px">
+              <h3>오늘 안내</h3>
+              <ul class="quick-list">
+                <li><a href="/support">장기요양 복지용구 연 한도</a></li>
+                <li><a href="/catalog?cat=home">욕실 안전손잡이 시공</a></li>
+                <li><a href="/catalog?cat=life">정기 청소·방제 구독</a></li>
+              </ul>
             </div>
             """
         )
 
-    body = f"""
-    <div class="hero">
-      {category_panel()}
-      <div class="banners">
-        <a class="banner b1" href="/consult">
-          <b>퇴원 후 돌봄,<br/>한곳에서 연결</b>
-          <span>불편사항을 입력하면 상품·지원·지역업체를 함께 안내합니다.</span>
-        </a>
-        <a class="banner b2" href="/support">
-          <b>정부·지자체 지원</b>
-          <span>성남시 시범 데이터 · 출처와 기준일 표시</span>
-        </a>
-        <a class="banner b3" href="/catalog">
-          <b>가격·후기·지역 비교</b>
-          <span>광고 상품은 따로 표시합니다</span>
-        </a>
-        <a class="banner b4" href="{esc(qs("/catalog", cat="emergency"))}">
-          <b>긴급 안전단말기</b>
-          <span>PoC는 모의 경보 · 112 자동연결 없음</span>
-        </a>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        {side_login}
-        <div class="panel side-box">
-          <h3>오늘 안내</h3>
-          <ul class="quick-list">
-            <li><a href="/support">장기요양 복지용구 연 한도</a></li>
-            <li><a href="/catalog?cat=home">욕실 안전손잡이 시공</a></li>
-            <li><a href="/catalog?cat=life">정기 청소·방제 구독</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-head">
-        <h2>오늘의 돌봄 추천</h2>
-        <a href="/catalog">인기순 전체</a>
-      </div>
-      {product_grid(popular)}
-    </div>
-    <div class="section">
-      <div class="section-head">
-        <h2>낮은 가격순</h2>
-        <a href="/catalog?sort=price_asc">가격비교</a>
-      </div>
-      {product_grid(cheap)}
-    </div>
-    {''.join(sections)}
-    <div class="section">
-      <div class="section-head">
-        <h2>정부·지자체 지원사업 후보</h2>
-        <a href="/support">전체 보기</a>
-      </div>
-      {_program_cards(programs)}
-    </div>
-    """
-    chrome("home", body, search_action="/")
+    st.markdown("### 오늘의 돌봄 추천")
+    show_product_grid(popular, key_prefix="pop")
+    st.markdown("### 낮은 가격순")
+    show_product_grid(cheap, key_prefix="cheap")
+    for cat in CATEGORIES:
+        rows = search_products(category=cat["code"]).head(5).to_dict("records")
+        st.markdown(f"### {cat['name']}")
+        show_product_grid(rows, key_prefix=cat["code"])
+    render_html(
+        '<div class="section"><div class="section-head"><h2>정부·지자체 지원사업 후보</h2><a href="/support">전체 보기</a></div>'
+        + _program_cards(programs)
+        + "</div>"
+    )
+    end_shell()
 
 
 def _program_cards(rows: list[dict]) -> str:

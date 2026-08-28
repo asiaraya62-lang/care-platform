@@ -1,7 +1,7 @@
 .venv/
 .streamlit/secrets.toml
 .env
-uploads/
+data/images/
 *.db
 __pycache__/
 .pytest_cache/
